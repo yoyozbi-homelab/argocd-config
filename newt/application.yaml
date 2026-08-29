@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: newt
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    # BitwardenSecret CR -> newt-main-tunnel-auth Secret
+    - repoURL: https://github.com/yoyozbi-homelab/argocd-config.git
+      targetRevision: HEAD
+      path: newt/manifests
+    - chart: newt
+      repoURL: https://charts.fossorial.io
+      targetRevision: 1.5.0
+      helm:
+        releaseName: newt
+        valuesObject:
+          global:
+            resources:
+              limits:
+                cpu: 200m
+                memory: 256Mi
+                ephemeral-storage: 256Mi
+              requests:
+                cpu: 25m
+                memory: 128Mi
+                ephemeral-storage: 128Mi
+          newtInstances:
+            - name: main-tunnel
+              enabled: true
+              acceptClients: true
+              auth:
+                existingSecretName: newt-main-tunnel-auth
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: newt
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    managedNamespaceMetadata:
+      labels:
+        bitwarden-secrets: enabled   # reflector mirrors bw-auth-token in here
+    syncOptions:
+      - CreateNamespace=true
