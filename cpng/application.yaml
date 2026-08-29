@@ -6,9 +6,13 @@ metadata:
 spec:
   project: default
   source:
-    chart: cpng
+    chart: cloudnative-pg
     repoURL: https://cloudnative-pg.github.io/charts
     targetRevision: 0.29.0
   destination:
     server: "https://kubernetes.default.svc"
     namespace: cnpg-system
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - CreateNamespace=true
