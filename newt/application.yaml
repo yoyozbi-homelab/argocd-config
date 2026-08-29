@@ -6,7 +6,7 @@ metadata:
   annotations:
     # No CRD dependency of its own beyond the out-of-band Bitwarden operator;
     # kept out of wave 0 so the operator installs alone. See root.yaml.
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   sources:

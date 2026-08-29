@@ -6,7 +6,7 @@ metadata:
   annotations:
     # Declares a CNPG Cluster, so it must not be applied until the cnpg app
     # (wave 0) is Healthy and its CRDs exist. See root.yaml.
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   sources:
@@ -80,6 +80,6 @@ spec:
         maxDuration: 5m
     managedNamespaceMetadata:
       labels:
-        bitwarden-secrets: enabled   # reflector mirrors bw-auth-token in here
+        bitwarden-secrets: enabled # reflector mirrors bw-auth-token in here
     syncOptions:
       - CreateNamespace=true
