@@ -56,6 +56,28 @@ spec:
             consume:
               enabled: true
               existingVolumeClaim: paperless-consume
+          # This node serves its first request ~20s after boot (aarch64, and the
+          # container's own init takes ~180s). The chart sets no timeoutSeconds on
+          # either probe, so both inherit Kubernetes' 1s default and can never
+          # succeed -- every attempt disconnects mid-request, which surfaces in the
+          # logs as an asyncio CancelledError from asgiref. The chart templates no
+          # startupProbe, so the slow start has to be absorbed here.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 20
+            failureThreshold: 20
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 300
+            periodSeconds: 60
+            timeoutSeconds: 20
+            failureThreshold: 5
           ingress:
             enabled: true
             className: traefik
@@ -69,6 +91,15 @@ spec:
   destination:
     server: "https://kubernetes.default.svc"
     namespace: paperless
+  # The PVs pre-bind their PVCs via claimRef so each claim lands on the volume
+  # meant for it. On binding the PV controller stamps uid and resourceVersion
+  # into that claimRef, which ArgoCD then reports as permanent drift.
+  ignoreDifferences:
+    - group: ""
+      kind: PersistentVolume
+      jsonPointers:
+        - /spec/claimRef/uid
+        - /spec/claimRef/resourceVersion
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     # On a fresh cluster the CNPG Cluster cannot apply until the cnpg
