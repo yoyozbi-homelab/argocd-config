@@ -20,6 +20,8 @@ spec:
       helm:
         releaseName: paperless
         valuesObject:
+          tweaks:
+            timezone: Europe/Zurich
           database:
             engine: postgresql
             host: paperless-db-rw
