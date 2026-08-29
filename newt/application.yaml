@@ -3,6 +3,10 @@ kind: Application
 metadata:
   name: newt
   namespace: argocd
+  annotations:
+    # No CRD dependency of its own beyond the out-of-band Bitwarden operator;
+    # kept out of wave 0 so the operator installs alone. See root.yaml.
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   sources:
@@ -21,7 +25,7 @@ spec:
             # Ordering only -- ArgoCD reports the CR healthy on apply, so it
             # does not wait for the operator to write newt-main-tunnel-auth.
             additionalAnnotations:
-              argocd.argoproj.io/sync-wave: "1"
+              argocd.argoproj.io/sync-wave: "2"
             resources:
               limits:
                 cpu: 200m
@@ -44,6 +48,6 @@ spec:
     automated: { prune: true, selfHeal: true }
     managedNamespaceMetadata:
       labels:
-        bitwarden-secrets: enabled   # reflector mirrors bw-auth-token in here
+        bitwarden-secrets: enabled # reflector mirrors bw-auth-token in here
     syncOptions:
       - CreateNamespace=true

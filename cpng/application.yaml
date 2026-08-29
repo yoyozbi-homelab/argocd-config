@@ -3,6 +3,10 @@ kind: Application
 metadata:
   name: cnpg
   namespace: argocd
+  annotations:
+    # Installs the postgresql.cnpg.io CRDs, so it must be Healthy before any app
+    # that declares a Cluster. See root.yaml.
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   source:

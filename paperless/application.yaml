@@ -3,6 +3,10 @@ kind: Application
 metadata:
   name: paperless
   namespace: argocd
+  annotations:
+    # Declares a CNPG Cluster, so it must not be applied until the cnpg app
+    # (wave 0) is Healthy and its CRDs exist. See root.yaml.
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   sources:
@@ -65,6 +69,15 @@ spec:
     namespace: paperless
   syncPolicy:
     automated: { prune: true, selfHeal: true }
+    # On a fresh cluster the CNPG Cluster cannot apply until the cnpg
+    # Application has installed its CRDs. Retry until it converges instead of
+    # leaving the app failed.
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
     managedNamespaceMetadata:
       labels:
         bitwarden-secrets: enabled   # reflector mirrors bw-auth-token in here
