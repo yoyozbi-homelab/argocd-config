@@ -1,0 +1,15 @@
+# Binding-only StorageClass for the hostPath volumes on rp's external disk.
+# There is no provisioner: the PVs in pv.yaml are pre-created by hand and the
+# PVCs bind to them by matching this class name.
+#
+# The class exists so every PVC can name it explicitly. Without that, rp's
+# default StorageClass would claim the PVCs and dynamically provision volumes
+# somewhere other than /mnt.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: paperless-hostpath
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+allowVolumeExpansion: false

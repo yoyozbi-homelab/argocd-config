@@ -1,0 +1,47 @@
+# Claims for the paperless hostPath volumes. Referenced from the chart values as
+# persistence.{data,media,consume}.existingVolumeClaim, which makes the chart
+# skip rendering its own pvc-*.yaml templates.
+#
+# storageClassName is set explicitly on every claim so rp's default
+# StorageClass cannot take them. Sizes match the corresponding PV exactly.
+#
+# The database claim is absent on purpose: CNPG creates paperless-db-1 itself.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-data
+  namespace: paperless
+spec:
+  storageClassName: paperless-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-media
+  namespace: paperless
+spec:
+  storageClassName: paperless-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-consume
+  namespace: paperless
+spec:
+  storageClassName: paperless-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

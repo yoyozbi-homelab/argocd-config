@@ -1,0 +1,96 @@
+# hostPath PVs on rp's external disk under /mnt.
+#
+# Every PV carries a claimRef pinning it to exactly one PVC. This is not
+# optional: all four share the paperless-hostpath class, and without claimRef
+# the scheduler binds a PVC to any sufficiently large free PV -- the 5Gi consume
+# claim could take the 5Gi database volume, or the 10Gi data claim could take
+# the 100Gi media volume. claimRef makes each pairing deterministic.
+#
+# Capacity here is advisory. Nothing enforces a size limit on a hostPath volume;
+# the real limit is the size of the disk mounted at /mnt.
+#
+# The directories must exist and be owned by the right UID before first sync --
+# see the host prerequisite in the plan. hostPath volumes get no fsGroup
+# treatment from kubelet, so DirectoryOrCreate leaves them root:root.
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: paperless-data
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: paperless-hostpath
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    namespace: paperless
+    name: paperless-data
+  hostPath:
+    path: /mnt/data/paperless/data
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: paperless-media
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: paperless-hostpath
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    namespace: paperless
+    name: paperless-media
+  hostPath:
+    path: /mnt/data/paperless/media
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: paperless-consume
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: paperless-hostpath
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    namespace: paperless
+    name: paperless-consume
+  hostPath:
+    path: /mnt/data/paperless/consume
+    type: DirectoryOrCreate
+---
+# CNPG names its PVC <clusterName>-<instanceNumber>, so this binds to
+# paperless-db-1 for the single instance declared in cluster.yaml.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: paperless-db
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: paperless-hostpath
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    namespace: paperless
+    name: paperless-db-1
+  hostPath:
+    path: /mnt/data/paperless-db
+    type: DirectoryOrCreate

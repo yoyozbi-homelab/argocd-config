@@ -1,0 +1,72 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: paperless
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    # StorageClass + hostPath PVs/PVCs, CNPG Cluster, Valkey, BitwardenSecret
+    - repoURL: https://github.com/yoyozbi-homelab/argocd-config.git
+      targetRevision: HEAD
+      path: paperless/manifests
+    - chart: paperless-ngx
+      repoURL: https://charts.derwitt.dev
+      targetRevision: 2.1.1
+      helm:
+        releaseName: paperless
+        valuesObject:
+          database:
+            engine: postgresql
+            host: paperless-db-rw
+            port: 5432
+            databaseName: paperless
+            # Both sourced from the Secret CNPG generates for the cluster.
+            userSecret:
+              name: paperless-db-app
+              key: username
+            passwordSecret:
+              name: paperless-db-app
+              key: password
+          redis:
+            connectionUrl: redis://paperless-valkey:6379
+          hosting:
+            # Generated key disabled -- the chart's template re-randomises it on
+            # every ArgoCD render. Supplied from Bitwarden instead.
+            secretKey:
+              create: false
+              name: paperless-secret-key
+              key: key
+            # Without this allauth cannot determine the client IP behind Traefik
+            # and returns 403 on login.
+            trustedClientIpHeader: X-Forwarded-For
+          persistence:
+            data:
+              enabled: true
+              existingVolumeClaim: paperless-data
+            media:
+              enabled: true
+              existingVolumeClaim: paperless-media
+            consume:
+              enabled: true
+              existingVolumeClaim: paperless-consume
+          ingress:
+            enabled: true
+            className: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: web
+            hosts:
+              - host: paperless.yohanzbinden.ch
+                paths:
+                  - path: /
+                    pathType: Prefix
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: paperless
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    managedNamespaceMetadata:
+      labels:
+        bitwarden-secrets: enabled   # reflector mirrors bw-auth-token in here
+    syncOptions:
+      - CreateNamespace=true

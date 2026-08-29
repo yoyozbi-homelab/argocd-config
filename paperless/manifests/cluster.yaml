@@ -1,0 +1,30 @@
+# Single-instance Postgres for paperless, run by the CNPG operator that the
+# cpng Application installs cluster-wide.
+#
+# Deliberately minimal compared to the shared main-cluster on ocr1: one app, one
+# replica, so no managed roles, no replication slots and no monitoring queries.
+#
+# CNPG generates the Secret paperless-db-app (keys username / password / dbname /
+# host / port) and the Service paperless-db-rw. Both are consumed by the chart
+# values in ../application.yaml.
+#
+# Storage binds the paperless-db hostPath PV via the paperless-hostpath class.
+# The instance runs as UID/GID 26, so /mnt/data/paperless-db must be chowned to
+# 26:26 on the host before the first sync.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: paperless-db
+  namespace: paperless
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie
+  enableSuperuserAccess: false
+  bootstrap:
+    initdb:
+      database: paperless
+      owner: paperless
+      encoding: UTF8
+  storage:
+    storageClass: paperless-hostpath
+    size: 5Gi
