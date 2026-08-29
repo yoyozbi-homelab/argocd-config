@@ -17,6 +17,11 @@ spec:
         releaseName: newt
         valuesObject:
           global:
+            # Apply chart resources after the BitwardenSecret (wave 0).
+            # Ordering only -- ArgoCD reports the CR healthy on apply, so it
+            # does not wait for the operator to write newt-main-tunnel-auth.
+            additionalAnnotations:
+              argocd.argoproj.io/sync-wave: "1"
             resources:
               limits:
                 cpu: 200m
